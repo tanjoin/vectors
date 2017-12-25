@@ -12,8 +12,6 @@
   <body id="container">
     <!-- HDR fragment shader -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r16/Stats.min.js"></script>
-    <script src="lib/detector.js"></script>
 		<script id="fs-hdr" type="x-shader/x-fragment">
 			// uniform sampler2D   tDiffuse;
 			// uniform float       exposure;
@@ -57,8 +55,7 @@
 		</script>
 
     <script>
-			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-			var container, stats;
+			var container;
 			var camera, scene, renderer;
 			var materialHDR, quad;
 			var sign = 1, rate = 1;
@@ -70,7 +67,7 @@
 				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 10000 );
 				camera.position.z = 900;
 				scene = new THREE.Scene();
-				var texture = new THREE.TextureLoader().load( "img/ikinari.png" );
+				var texture = new THREE.TextureLoader().load( "https://tanjoin.github.io/vectors/img/ikinari.png" );
 				texture.minFilter = THREE.LinearFilter;
 				texture.magFilter = THREE.NearestFilter;
 				materialHDR = new THREE.ShaderMaterial( {
@@ -82,7 +79,7 @@
 					vertexShader: getText( 'vs-hdr' ),
 					fragmentShader: getText( 'fs-hdr' )
 				} );
-				var plane = new THREE.PlaneBufferGeometry( 512, 768 );
+				var plane = new THREE.PlaneBufferGeometry( texture.height, texture.width );
 				quad = new THREE.Mesh( plane, materialHDR );
 				quad.position.z = -100;
 				scene.add( quad );
@@ -90,8 +87,6 @@
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
-				stats = new Stats();
-				container.appendChild( stats.domElement );
 				//
 				window.addEventListener( 'resize', onWindowResize, false );
 			}
@@ -107,7 +102,6 @@
 			function animate() {
 				requestAnimationFrame( animate );
 				render();
-				stats.update();
 			}
 			function render() {
 				var delta = clock.getDelta() * 5;
