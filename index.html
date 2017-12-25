@@ -6,10 +6,47 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="tanjo">
-    <title>tanjoin</title>
+    <title>filters.js</title>
+    <link rel="stylesheet" type="text/css" href="index.css">
   </head>
-  <body class="edit-background">
+  <body id="container">
+    <!-- HDR fragment shader -->
+		<script id="fs-hdr" type="x-shader/x-fragment">
+			uniform sampler2D   tDiffuse;
+			uniform float       exposure;
+			uniform float       brightMax;
+			varying vec2  vUv;
+			vec3 decode_pnghdr( const in vec4 color ) {
+				// remove gamma correction
+				vec4 res = color * color;
+				// decoded RI
+				float ri = pow( 2.0, res.w * 32.0 - 16.0 );
+				// decoded HDR pixel
+				res.xyz = res.xyz * ri;
+				return res.xyz;
+			}
+			void main()	{
+				vec4 color = texture2D( tDiffuse, vUv );
+				color.xyz  = decode_pnghdr( color );
+				// apply gamma correction and exposure
+				//gl_FragColor = vec4( pow( exposure * color.xyz, vec3( 0.474 ) ), 1.0 );
+				// Perform tone-mapping
+				float Y = dot(vec4(0.30, 0.59, 0.11, 0.0), color);
+				float YD = exposure * (exposure/brightMax + 1.0) / (exposure + 1.0);
+				color *= YD;
+				gl_FragColor = vec4( color.xyz, 1.0 );
+			}
+		</script>
+		<!-- HDR vertex shader -->
+		<script id="vs-hdr" type="x-shader/x-vertex">
+			varying vec2 vUv;
+			void main()	{
+				vUv  = uv;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			}
+		</script>
   </body>
+  <script src="lib/detector.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js"></script>
   <script src="index.js"></script>
 </html>
