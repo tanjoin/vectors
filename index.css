@@ -1,13 +1,10 @@
 body {
   color: #fff;
-  background-color: #000;
+  background-color: #888;
   margin: 0px;
   overflow: hidden;
 }
-#info {
-  color: #fff;
-  position: absolute;;
-  top: 0px;
-  width: 100%;
-  padding: 5px;
+#import {
+  margin-top: 200px;
+  text-align: center;
 }

@@ -10,6 +10,9 @@
     <link rel="stylesheet" type="text/css" href="index.css">
   </head>
   <body id="container">
+    <div id="import">
+      <input id="getfile" type="file" accept="image/*" />
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js"></script>
     <!-- HDR fragment shader -->
 		<script id="fs-negative" type="x-shader/x-fragment">
@@ -48,50 +51,81 @@
 			var materialHDR, quad;
 			var sign = 1, rate = 1;
 			var clock = new THREE.Clock();
-      setup();
-			load("https://tanjoin.github.io/vectors/img/memorial.png");
+
+      window.onload = function() {
+        var input = document.getElementById('getfile');
+        input.onchange = function() {
+          var image = new Image();
+          image.onload = function() {
+            setImage(this);
+          }
+          reader = new FileReader();
+          reader.onload = function() {
+            image.src = reader.result;
+          }
+          reader.readAsDataURL(input.files[0]);
+        }
+      };
+
       function setup() {
+        THREE.ImageUtils.crossOrigin = "*";
         container = document.getElementById( 'container' );
 				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 10000 );
 				camera.position.z = 900;
 				scene = new THREE.Scene();
       }
-			function load(file) {
-				new THREE.TextureLoader().load( file, function(texture) {
-          texture.minFilter = THREE.LinearFilter;
-          texture.magFilter = THREE.NearestFilter;
-          var size = {
-            x: texture.image.width,
-            y: texture.image.height
-          };
-          var aspect = window.innerHeight / size.height;
-          if (size.y > window.innerHeight) {
-            size.y = window.innerHeight;
-            size.x = size.x * aspect;
-          }
-          materialHDR = new THREE.ShaderMaterial( {
-            uniforms: {
-              tDiffuse:  { value: texture },
-              exposure:  { value: 0.125 },
-              brightMax: { value: 0.5 },
-              vScreenSize: { value: new THREE.Vector2(size.x, size.y)},
-              fMosaicScale: { value: 15 }
-            },
-            vertexShader: document.getElementById('vs').textContent,
-            fragmentShader: document.getElementById( 'fs-mosaic' ).textContent
-          } );
-          var plane = new THREE.PlaneBufferGeometry(size.x, size.y);
-          quad = new THREE.Mesh( plane, materialHDR );
-          quad.position.z = -100;
-          scene.add( quad );
-          renderer = new THREE.WebGLRenderer();
-          renderer.setPixelRatio( window.devicePixelRatio );
-          renderer.setSize( window.innerWidth, window.innerHeight );
-          container.appendChild( renderer.domElement );
-          //
-          window.addEventListener( 'resize', onWindowResize, false );
-          renderer.render( scene, camera );
+
+      function setUrl() {
+        document.getElementById("import").style.display="none";
+        setup();
+        var url = document.getElementById('path').value;
+        new THREE.TextureLoader().load(file, function(texture) {
+          load(texture);
+        });
+      }
+
+      function setImage(image) {
+        document.getElementById("import").style.display="none";
+        setup();
+        var texture = new THREE.Texture(image);
+        texture.needsUpdate = true;
+        load(texture);
+      }
+
+			function load(texture) {
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.NearestFilter;
+        var size = {
+          x: texture.image.width,
+          y: texture.image.height
+        };
+        var aspect = window.innerHeight / size.height;
+        if (size.y > window.innerHeight) {
+          size.y = window.innerHeight;
+          size.x = size.x * aspect;
+        }
+        materialHDR = new THREE.ShaderMaterial( {
+          uniforms: {
+            tDiffuse:  { value: texture },
+            exposure:  { value: 0.125 },
+            brightMax: { value: 0.5 },
+            vScreenSize: { value: new THREE.Vector2(size.x, size.y)},
+            fMosaicScale: { value: 5 }
+          },
+          vertexShader: document.getElementById('vs').textContent,
+          fragmentShader: document.getElementById( 'fs-negative' ).textContent
         } );
+        var plane = new THREE.PlaneBufferGeometry(size.x, size.y);
+        quad = new THREE.Mesh( plane, materialHDR );
+        quad.position.z = -100;
+        scene.add( quad );
+        renderer = new THREE.WebGLRenderer();
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild( renderer.domElement );
+        //
+        window.addEventListener( 'resize', onWindowResize, false );
+        renderer.render( scene, camera );
 			}
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
