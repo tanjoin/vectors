@@ -10,111 +10,93 @@
     <link rel="stylesheet" type="text/css" href="index.css">
   </head>
   <body id="container">
-    <!-- HDR fragment shader -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js"></script>
-		<script id="fs-hdr" type="x-shader/x-fragment">
-			// uniform sampler2D   tDiffuse;
-			// uniform float       exposure;
-			// uniform float       brightMax;
-			// varying vec2  vUv;
-			// vec3 decode_pnghdr( const in vec4 color ) {
-			// 	// remove gamma correction
-			// 	vec4 res = color * color;
-			// 	// decoded RI
-			// 	float ri = pow( 2.0, res.w * 32.0 - 16.0 );
-			// 	// decoded HDR pixel
-			// 	res.xyz = res.xyz * ri;
-			// 	return res.xyz;
-			// }
-			// void main()	{
-			// 	vec4 color = texture2D( tDiffuse, vUv );
-			// 	color.xyz  = decode_pnghdr( color );
-			// 	// apply gamma correction and exposure
-			// 	//gl_FragColor = vec4( pow( exposure * color.xyz, vec3( 0.474 ) ), 1.0 );
-			// 	// Perform tone-mapping
-			// 	float Y = dot(vec4(0.30, 0.59, 0.11, 0.0), color);
-			// 	float YD = exposure * (exposure/brightMax + 1.0) / (exposure + 1.0);
-			// 	color *= YD;
-			// 	gl_FragColor = vec4( color.xyz, 1.0 );
-			// }
+    <!-- HDR fragment shader -->
+		<script id="fs-negative" type="x-shader/x-fragment">
       varying vec2 vUv;
       uniform sampler2D tDiffuse;
       void main() {
-          vec4 color = texture2D( tDiffuse, vUv );
-          // gl_FragColor = color;
-          gl_FragColor = vec4(1.0 - color.x, 1.0 - color.y, 1.0 - color.z, 1.0);
+        vec4 color = texture2D(tDiffuse, vUv);
+        gl_FragColor = vec4(1.0 - color.x, 1.0 - color.y, 1.0 - color.z, 1.0);
       }
 		</script>
+    <script id="fs-mosaic" type="x-shader/x-fragment">
+      varying vec2, vUv;
+      uniform sampler2D tDiffuse;
+      uniform vec2 vScreenSize;
+      uniform float fMosaicScale;
+      void main() {
+        vec2 vUv2 = vUv;
+        vUv2.x = floor(vUv.x  * vScreenSize.x / fMosaicScale) / (vScreenSize.x / fMosaicScale) + (fMosaicScale/2.0) / vScreenSize.x;
+        vUv2.y = floor(vUv.y  * vScreenSize.y / fMosaicScale) / (vScreenSize.y / fMosaicScale) + (fMosaicScale/2.0) / vScreenSize.y;
+        vec4 color = texture2D(tDiffuse, vUv2);
+        gl_FragColor = color;
+      }
+    </script>
 		<!-- HDR vertex shader -->
-		<script id="vs-hdr" type="x-shader/x-vertex">
+		<script id="vs" type="x-shader/x-vertex">
 			varying vec2 vUv;
 			void main()	{
 				vUv  = uv;
 				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 			}
 		</script>
-
+    <!-- Script -->
     <script>
 			var container;
 			var camera, scene, renderer;
 			var materialHDR, quad;
 			var sign = 1, rate = 1;
 			var clock = new THREE.Clock();
-			init();
-			animate();
-			function init() {
-				container = document.getElementById( 'container' );
+      setup();
+			load("https://tanjoin.github.io/vectors/img/memorial.png");
+      function setup() {
+        container = document.getElementById( 'container' );
 				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 10000 );
 				camera.position.z = 900;
 				scene = new THREE.Scene();
-				var texture = new THREE.TextureLoader().load( "https://tanjoin.github.io/vectors/img/ikinari.png" );
-				texture.minFilter = THREE.LinearFilter;
-				texture.magFilter = THREE.NearestFilter;
-				materialHDR = new THREE.ShaderMaterial( {
-					uniforms: {
-						tDiffuse:  { value: texture },
-						exposure:  { value: 0.125 },
-						brightMax: { value: 0.5 }
-						},
-					vertexShader: getText( 'vs-hdr' ),
-					fragmentShader: getText( 'fs-hdr' )
-				} );
-				var plane = new THREE.PlaneBufferGeometry( texture.height, texture.width );
-				quad = new THREE.Mesh( plane, materialHDR );
-				quad.position.z = -100;
-				scene.add( quad );
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				container.appendChild( renderer.domElement );
-				//
-				window.addEventListener( 'resize', onWindowResize, false );
+      }
+			function load(file) {
+				new THREE.TextureLoader().load( file, function(texture) {
+          texture.minFilter = THREE.LinearFilter;
+          texture.magFilter = THREE.NearestFilter;
+          var size = {
+            x: texture.image.width,
+            y: texture.image.height
+          };
+          var aspect = window.innerHeight / size.height;
+          if (size.y > window.innerHeight) {
+            size.y = window.innerHeight;
+            size.x = size.x * aspect;
+          }
+          materialHDR = new THREE.ShaderMaterial( {
+            uniforms: {
+              tDiffuse:  { value: texture },
+              exposure:  { value: 0.125 },
+              brightMax: { value: 0.5 },
+              vScreenSize: { value: new THREE.Vector2(size.x, size.y)},
+              fMosaicScale: { value: 15 }
+            },
+            vertexShader: document.getElementById('vs').textContent,
+            fragmentShader: document.getElementById( 'fs-mosaic' ).textContent
+          } );
+          var plane = new THREE.PlaneBufferGeometry(size.x, size.y);
+          quad = new THREE.Mesh( plane, materialHDR );
+          quad.position.z = -100;
+          scene.add( quad );
+          renderer = new THREE.WebGLRenderer();
+          renderer.setPixelRatio( window.devicePixelRatio );
+          renderer.setSize( window.innerWidth, window.innerHeight );
+          container.appendChild( renderer.domElement );
+          //
+          window.addEventListener( 'resize', onWindowResize, false );
+          renderer.render( scene, camera );
+        } );
 			}
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
 				renderer.setSize( window.innerWidth, window.innerHeight );
-			}
-			function getText( id ) {
-				return document.getElementById( id ).textContent;
-			}
-			//
-			function animate() {
-				requestAnimationFrame( animate );
-				render();
-			}
-			function render() {
-				var delta = clock.getDelta() * 5;
-				if ( materialHDR.uniforms.exposure.value > 0 || materialHDR.uniforms.exposure.value < 1 ) {
-					rate = 0.25;
-				} else {
-					rate = 1;
-				}
-				if ( materialHDR.uniforms.exposure.value > 5 || materialHDR.uniforms.exposure.value <= 0 ) {
-					sign *= -1;
-				}
-				materialHDR.uniforms.exposure.value += sign * rate * delta;
-				renderer.render( scene, camera );
 			}
 		</script>
   </body>
