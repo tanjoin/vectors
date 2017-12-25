@@ -29,7 +29,7 @@ function init() {
 		vertexShader: getText( 'vs-hdr' ),
 		fragmentShader: getText( 'fs-hdr' )
 	} );
-	var plane = new THREE.PlaneBufferGeometry( 512, 768 );
+	var plane = new THREE.PlaneBufferGeometry( 4032, 3024 );
 	quad = new THREE.Mesh( plane, materialHDR );
 	quad.position.z = -100;
 	scene.add( quad );
