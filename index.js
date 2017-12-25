@@ -17,7 +17,7 @@ function init() {
 	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 10000 );
 	camera.position.z = 900;
 	scene = new THREE.Scene();
-	var texture = new THREE.TextureLoader().load( "./img/IMG_6265.JPG" );
+	var texture = new THREE.TextureLoader().load( "https://tanjoin.github.io/vectors/img/memorial.JPG" );
 	texture.minFilter = THREE.LinearFilter;
 	texture.magFilter = THREE.NearestFilter;
 	materialHDR = new THREE.ShaderMaterial( {
@@ -29,7 +29,7 @@ function init() {
 		vertexShader: getText( 'vs-hdr' ),
 		fragmentShader: getText( 'fs-hdr' )
 	} );
-	var plane = new THREE.PlaneBufferGeometry( 4032, 3024 );
+	var plane = new THREE.PlaneBufferGeometry( 1008, 756 );
 	quad = new THREE.Mesh( plane, materialHDR );
 	quad.position.z = -100;
 	scene.add( quad );
