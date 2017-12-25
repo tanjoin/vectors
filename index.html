@@ -113,12 +113,12 @@
             fMosaicScale: { value: 5 }
           },
           vertexShader: document.getElementById('vs').textContent,
-          fragmentShader: document.getElementById( 'fs-negative' ).textContent
+          fragmentShader: document.getElementById( 'fs-mosaic' ).textContent
         } );
         var plane = new THREE.PlaneBufferGeometry(size.x, size.y);
         quad = new THREE.Mesh( plane, materialHDR );
         quad.position.z = -100;
-        scene.add( quad );
+        scene.add(quad);
         renderer = new THREE.WebGLRenderer();
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize( window.innerWidth, window.innerHeight );
